@@ -46,11 +46,8 @@ fn main() {
         });
     }
 
-    let mut mapdata =
-        std::fs::File::create("/tmp/ipmap.json").expect("Couldn't create /tmp/ipmap.json");
-    let mut ip_index = HashSet::new();
-    let mut latitude_index = HashSet::new();
-    let mut longitude_index = HashSet::new();
+    let mut mapdata = std::fs::File::create("/tmp/ipmap.json").expect("Couldn't create /tmp/ipmap.json");
+    let mut coord_index: HashSet<(String, String)> = HashSet::new();
 
     // Set log settings
     Log::set_opt(Opt::Release);
@@ -66,36 +63,34 @@ fn main() {
             Ok(value) => match value.ip {
                 Some(InternetSlice::Ipv4(header)) => {
                     let cur_ip = header.source_addr();
-                    if !ip_index.contains(&cur_ip.to_string()) && !cur_ip.is_private() {
-                        ip_index.insert(cur_ip.to_string());
-                        // Run locator with the IP address, which returns Latitude and Longitude.
-                        match locator::Locator::get(cur_ip.to_string()) {
-                            Ok(data) => {
-                                if !latitude_index.contains(&data.longitude) {
-                                    if !longitude_index.contains(&data.longitude) {
-                                        let json = json!({
-                                            "location": {
-                                                "ip": data.ip,
-                                                "latitude": data.latitude,
-                                                "longitude": data.longitude,
-                                            }
-                                        });
-                                        longitude_index.insert(data.longitude);
-                                        println!("{}", json);
-                                        mapdata
-                                            .write_all(format!("\n{}", json).as_bytes())
-                                            .expect("Couldn't write to /tmp/ipmap.json");
-                                    }
-                                    latitude_index.insert(data.latitude);
-                                }
-                            }
-                            // If there was an error, send it to the logs.
-                            Err(error) => {
-                                Log::error(&cur_ip.to_string());
-                                Log::error(&error);
-                            }
-                        }
-                    }
+					// Run locator with the IP address, which returns Latitude and Longitude.
+					if !cur_ip.is_private() {
+						match locator::Locator::get(cur_ip.to_string()) {
+							Ok(data) => {
+								if !coord_index.contains(&(data.latitude.clone(), data.longitude.clone())) {
+									coord_index.insert((data.latitude.clone(), data.longitude.clone()));
+									let json = json!({
+										"location": {
+											"ip": data.ip,
+											"latitude": data.latitude,
+											"longitude": data.longitude,
+										}
+									});
+									println!("{}", json);
+									//println!("{:?}", coord_index);
+									mapdata
+										.write_all(format!("\n{}", json).as_bytes())
+										.expect("Couldn't write to /tmp/ipmap.json");
+								}
+							}
+							// If there was an error, send it to the logs.
+							Err(error) => {
+								Log::error(&cur_ip.to_string());
+								Log::error(&error);
+							}
+						}
+					}
+					
                 }
                 Some(_) | None => (),
             },
