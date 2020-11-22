@@ -1,33 +1,61 @@
 use casual_logger::Log;
-use etherparse::{InternetSlice, SlicedPacket};
 use ipgeolocate::Locator;
-use pcap::Device;
 use std::collections::HashSet;
 
 use crate::IP_MAP;
 
+mod connection;
+mod sniffer;
+
+#[cfg(target_os = "linux")]
+mod linux;
+#[cfg(any(target_os = "macos", target_os = "freebsd"))]
+mod lsof;
+#[cfg(target_os = "windows")]
+mod windows;
+
+use std::sync::{Arc, Mutex};
 pub fn ipextract() {
     println!("Running IP Detection");
 
-    let mut ip_index = HashSet::new();
-    let mut latitude_index = HashSet::new();
-    let mut longitude_index = HashSet::new();
+    let mut t = vec![];
+    let ip_index = Arc::new(Mutex::new(HashSet::new()));
+    let latitude_index = Arc::new(Mutex::new(HashSet::new()));
+    let longitude_index = Arc::new(Mutex::new(HashSet::new()));
 
-    let mut cap = Device::lookup().unwrap().open().unwrap();
+    //let mut cap = Device::lookup().unwrap().open().unwrap();
 
-    // Loop through each packet in the capture interface as an iterator until it returns an error.
-    while let Ok(packet) = cap.next() {
-        match SlicedPacket::from_ethernet(packet.data) {
-            Err(error) => {
-                Log::error(&error.to_string());
-            }
-            Ok(value) => match value.ip {
-                Some(InternetSlice::Ipv4(header)) => {
-                    let current_ip = header.source_addr();
-                    if !ip_index.contains(&current_ip.to_string()) && !current_ip.is_private() {
+    let i = sniffer::get_input(None).unwrap();
+    i.network_interfaces
+        .into_iter()
+        .zip(i.network_frames.into_iter())
+        .for_each(|(ii, f)| {
+            let ip_index = ip_index.clone();
+            let latitude_index = latitude_index.clone();
+            let longitude_index = longitude_index.clone();
+            t.push(std::thread::spawn(move || {
+                let mut ss = sniffer::Sniffer::new(ii, f, false);
+                loop {
+                    let p = match ss.next() {
+                        Some(p) => p,
+                        None => continue,
+                    };
+                    let current_ip = p.connection.remote_socket.ip;
+                    let current_ip = match current_ip {
+                        std::net::IpAddr::V4(ip) => ip,
+                        std::net::IpAddr::V6(_) => continue,
+                    };
+
+                    let mut ip_index = ip_index.lock().unwrap();
+                    let mut latitude_index = latitude_index.lock().unwrap();
+                    let mut longitude_index = longitude_index.lock().unwrap();
+
+                    if !ip_index.contains(&current_ip.to_string()) {
+                        //&& !current_ip.is_private() {
                         ip_index.insert(current_ip.to_string());
 
                         // Run locator with the IP address, which returns Latitude and Longitude.
+
                         match Locator::get_ipv4(current_ip) {
                             Ok(ip) => {
                                 if !latitude_index.contains(&ip.longitude) {
@@ -56,8 +84,11 @@ pub fn ipextract() {
                         }
                     }
                 }
-                Some(_) | None => (),
-            },
-        }
-    }
+            }));
+        });
+
+    t.into_iter().for_each(|t| {
+        t.join().unwrap();
+    });
+    // Loop through each packet in the capture interface as an iterator until it returns an error.
 }
