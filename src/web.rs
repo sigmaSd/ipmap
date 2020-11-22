@@ -1,5 +1,7 @@
 use rocket::response::content;
-use rocket_include_static_resources::{StaticResponse, static_response, static_resources_initialize};
+use rocket_include_static_resources::{
+    static_resources_initialize, static_response, StaticResponse,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::IP_MAP;
@@ -8,11 +10,7 @@ pub fn rocket() {
     println!("Running Webserver");
     rocket::ignite()
         .attach(StaticResponse::fairing(|resources| {
-            static_resources_initialize!(
-                resources,
-                "icon",
-                "data/icon.png",
-            );
+            static_resources_initialize!(resources, "icon", "data/icon.png",);
         }))
         .mount("/", routes![index, icon, json, license, js])
         .launch();
@@ -20,18 +18,17 @@ pub fn rocket() {
 
 #[get("/")]
 fn index() -> content::Html<String> {
-    content::Html(format!("{}", include_str!("../data/index.html")))
+    content::Html(include_str!("../data/index.html").to_string())
 }
 
 #[get("/map.js")]
 fn js() -> content::JavaScript<String> {
-    content::JavaScript(format!("{}", include_str!("../data/map.js")))
+    content::JavaScript(include_str!("../data/map.js").to_string())
 }
-
 
 #[get("/license")]
 fn license() -> content::Html<String> {
-    content::Html(format!("{}", include_str!("../data/license.html")))
+    content::Html(include_str!("../data/license.html").to_string())
 }
 
 #[derive(Serialize, Deserialize)]
@@ -64,8 +61,8 @@ fn json() -> content::Json<String> {
         };
 
         json.push_str(&format!("{},\n", serialized));
-    };
-    
+    }
+
     json = (&json[0..json.len() - 2]).to_string();
     json.push_str("\n]\n");
 

@@ -1,6 +1,6 @@
-use ipgeolocate::Locator;
 use casual_logger::Log;
 use etherparse::{InternetSlice, SlicedPacket};
+use ipgeolocate::Locator;
 use pcap::Device;
 use std::collections::HashSet;
 
@@ -32,8 +32,11 @@ pub fn ipextract() {
                             Ok(ip) => {
                                 if !latitude_index.contains(&ip.longitude) {
                                     if !longitude_index.contains(&ip.longitude) {
-
-                                        IP_MAP.write().unwrap().push([ip.ip.clone(), ip.latitude.clone(), ip.longitude.clone()]);
+                                        IP_MAP.write().unwrap().push([
+                                            ip.ip.clone(),
+                                            ip.latitude.clone(),
+                                            ip.longitude.clone(),
+                                        ]);
 
                                         println!("{} ({})", ip.ip, ip.city);
                                         longitude_index.insert(ip.longitude);
@@ -44,7 +47,11 @@ pub fn ipextract() {
                             // If there was an error, send it to the logs.
                             Err(error) => {
                                 eprintln!("location error: {} ({})", current_ip.to_string(), error);
-                                Log::error(&format!("Location error: {} ({})", current_ip.to_string(), error));
+                                Log::error(&format!(
+                                    "Location error: {} ({})",
+                                    current_ip.to_string(),
+                                    error
+                                ));
                             }
                         }
                     }
