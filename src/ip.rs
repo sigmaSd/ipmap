@@ -21,7 +21,7 @@ pub fn ipextract() {
             let latitude_index = latitude_index.clone();
             let longitude_index = longitude_index.clone();
             t.push(std::thread::spawn(move || {
-                let mut ss = sniff::sniffer::Sniffer::new(ii, f, false);
+                let mut ss = sniff::sniffer::Sniffer::new(ii, f);
                 loop {
                     let p = match ss.next() {
                         Some(p) => p,
