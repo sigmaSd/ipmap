@@ -21,14 +21,4 @@ users = "0.11.0"
 ipgeolocate = "0.2.3"
 once_cell = "1.5.2"
 serde = "1.0.117"
-pnet = "0.26.0"
-ipnetwork = "0.17.0"
-failure = "0.1.8"
-
-
-[target.'cfg(target_os="windows")'.dependencies]
-netstat2 = "0.9.0"
-sysinfo = "0.15.1"
-
-[target.'cfg(target_os="linux")'.dependencies]
-procfs = "0.7.4"
+sniff = { git = "https://github.com/sigmaSd/sniff" }

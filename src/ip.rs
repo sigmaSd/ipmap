@@ -1,20 +1,9 @@
+use crate::IP_MAP;
 use casual_logger::Log;
 use ipgeolocate::Locator;
 use std::collections::HashSet;
-
-use crate::IP_MAP;
-
-mod connection;
-mod sniffer;
-
-#[cfg(target_os = "linux")]
-mod linux;
-#[cfg(any(target_os = "macos", target_os = "freebsd"))]
-mod lsof;
-#[cfg(target_os = "windows")]
-mod windows;
-
 use std::sync::{Arc, Mutex};
+
 pub fn ipextract() {
     println!("Running IP Detection");
 
@@ -23,9 +12,7 @@ pub fn ipextract() {
     let latitude_index = Arc::new(Mutex::new(HashSet::new()));
     let longitude_index = Arc::new(Mutex::new(HashSet::new()));
 
-    //let mut cap = Device::lookup().unwrap().open().unwrap();
-
-    let i = sniffer::get_input(None).unwrap();
+    let i = sniff::sniffer::get_networks(None).unwrap();
     i.network_interfaces
         .into_iter()
         .zip(i.network_frames.into_iter())
@@ -34,7 +21,7 @@ pub fn ipextract() {
             let latitude_index = latitude_index.clone();
             let longitude_index = longitude_index.clone();
             t.push(std::thread::spawn(move || {
-                let mut ss = sniffer::Sniffer::new(ii, f, false);
+                let mut ss = sniff::sniffer::Sniffer::new(ii, f, false);
                 loop {
                     let p = match ss.next() {
                         Some(p) => p,
