@@ -10,6 +10,7 @@ use casual_logger::{Level, Log, Opt};
 use clap::{App, Arg};
 use once_cell::sync::Lazy;
 use std::{process::exit, sync::RwLock, thread};
+#[cfg(unix)]
 use users::{get_current_uid, get_user_by_uid};
 
 mod ip;
