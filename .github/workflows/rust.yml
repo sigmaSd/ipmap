@@ -75,7 +75,7 @@ jobs:
       TARGET_DIR: ./target
     strategy:
       matrix:
-        build: [linux, macos, win-msvc, win-gnu]
+        build: [linux, macos, win-msvc]
         include:
         - build: linux
           os: ubuntu-latest
@@ -89,10 +89,6 @@ jobs:
           os: windows-latest
           rust: nightly
           target: x86_64-pc-windows-msvc
-        - build: win-gnu
-          os: windows-latest
-          rust: nightly-x86_64-gnu
-          target: x86_64-pc-windows-gnu
 
     steps:
      - name: Check out repo
