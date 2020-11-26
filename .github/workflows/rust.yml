@@ -16,8 +16,8 @@ name: release
 on:
   push:
     # Enable when testing release infrastructure on a branch.
-   #branches:
-   #  - master
+   branches:
+     - master
   #pull_request:
   #  branches:
    #   - master
