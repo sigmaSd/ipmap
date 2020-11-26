@@ -17,7 +17,7 @@ on:
   push:
     # Enable when testing release infrastructure on a branch.
    branches:
-     - master
+     - ci3
   #pull_request:
   #  branches:
    #   - master
